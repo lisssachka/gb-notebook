@@ -1,4 +1,6 @@
-package notebook.repository;
+package notebook.model.repository;
+
+import notebook.model.User;
 
 import java.util.List;
 import java.util.Optional;

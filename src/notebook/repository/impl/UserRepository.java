@@ -1,13 +1,14 @@
 package notebook.repository.impl;
 
-import notebook.dao.impl.FileOperation;
-import notebook.mapper.impl.UserMapper;
+
 import notebook.model.User;
-import notebook.repository.GBRepository;
+import notebook.mapper.impl.UserMapper;
+import notebook.dao.impl.FileOperation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import notebook.model.repository.GBRepository;
 
 public class UserRepository implements GBRepository<User, Long> {
     private final UserMapper mapper;
@@ -55,12 +56,50 @@ public class UserRepository implements GBRepository<User, Long> {
     }
 
     @Override
-    public Optional<User> update(Long id, User user) {
-        return Optional.empty();
+    public Optional<User> update(Long userId, User update) {
+        List<User> users = findAll();
+        User editUser = users.stream()
+                .filter(u -> u.getId()
+                        .equals(userId))
+                .findFirst().orElseThrow(() -> new RuntimeException("User not found"));
+        editUser.setFirstName(update.getFirstName());
+        editUser.setLastName(update.getLastName());
+        editUser.setPhone(update.getPhone());
+        write(users);
+        return Optional.of(update);
     }
 
     @Override
     public boolean delete(Long id) {
-        return false;
+        try{
+            List<User> users = findAll();
+            User delUser = users.stream().filter(u -> u.getId().equals(id)).findFirst().get();
+            for (User user: users) {
+                if (user.getId() > delUser.getId())
+                    user.setId(user.getId()-1);
+            }
+            users.remove(delUser);
+            List<String> list = new ArrayList<>();
+            for (User user: users) {
+                list.add(mapper.toInput(user));
+            }
+            operation.saveAll(list);
+            return  true;
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public UserMapper getMapper() {
+
+        return mapper;
+    }
+    private void write(List<User> users) {
+        List<String> lines = new ArrayList<>();
+        for (User u: users) {
+            lines.add(mapper.toInput(u));
+        }
+        operation.saveAll(lines);
     }
 }
+
